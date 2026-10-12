@@ -1,0 +1,8 @@
+{
+  "name": "TheImpart",
+  "description": "Imported from GitHub: ZamulaMi/The-Impart",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
