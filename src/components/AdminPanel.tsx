@@ -2091,35 +2091,33 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
                       {/* Панель дій над статтею */}
                       <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-center">
-                        {/* Кнопка швидкого приховування/публікації для UA (тільки адмін) */}
-                        {!isEditor && (
-                          <button
-                            onClick={() => handleToggleUaVisibility(art)}
-                            disabled={isTogglingUa}
-                            className={`p-2 rounded transition-colors cursor-pointer flex items-center gap-1 text-xs ${
-                              isPubUa
-                                ? 'text-neutral-600 hover:text-amber-700 hover:bg-amber-50'
-                                : 'text-neutral-500 hover:text-emerald-700 hover:bg-emerald-50'
-                            } disabled:opacity-50`}
-                            title={
-                              isPubUa
-                                ? 'Сховати українську версію з сайту'
-                                : 'Опублікувати українську версію на сайті'
-                            }
-                          >
-                            {isTogglingUa ? (
-                              <div className="w-3.5 h-3.5 border-2 border-neutral-400 border-t-transparent rounded-full animate-spin" />
-                            ) : (
-                              <>
-                                <span className="text-[11px] font-semibold text-neutral-700">UA</span>
-                                <span className="hidden lg:inline">{isPubUa ? 'Сховати' : 'Показати'}</span>
-                              </>
-                            )}
-                          </button>
-                        )}
+                        {/* Кнопка швидкого приховування/публікації для UA */}
+                        <button
+                          onClick={() => handleToggleUaVisibility(art)}
+                          disabled={isTogglingUa}
+                          className={`p-2 rounded transition-colors cursor-pointer flex items-center gap-1 text-xs ${
+                            isPubUa
+                              ? 'text-neutral-600 hover:text-amber-700 hover:bg-amber-50'
+                              : 'text-neutral-500 hover:text-emerald-700 hover:bg-emerald-50'
+                          } disabled:opacity-50`}
+                          title={
+                            isPubUa
+                              ? 'Сховати українську версію з сайту'
+                              : 'Опублікувати українську версію на сайті'
+                          }
+                        >
+                          {isTogglingUa ? (
+                            <div className="w-3.5 h-3.5 border-2 border-neutral-400 border-t-transparent rounded-full animate-spin" />
+                          ) : (
+                            <>
+                              <span className="text-[11px] font-semibold text-neutral-700">UA</span>
+                              <span className="hidden lg:inline">{isPubUa ? 'Сховати' : 'Показати'}</span>
+                            </>
+                          )}
+                        </button>
 
-                        {/* Кнопка швидкого приховування/публікації для EN (тільки адмін) */}
-                        {!isEditor && hasEn && (
+                        {/* Кнопка швидкого приховування/публікації для EN */}
+                        {hasEn && (
                           <button
                             onClick={() => handleToggleEnVisibility(art)}
                             disabled={isTogglingEn}

@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { getNeonSql, cleanConnectionString, safeExecuteSql } from './_db.ts';
-import { verifyAdminToken, extractToken } from './_auth_utils.ts';
+import { verifyAdminToken, verifyEditorOrAdminToken, extractToken } from './_auth_utils.ts';
 import { SEED_ARTICLES } from '../src/data/seedArticles.ts';
 import { initResponseHelpers, parseRequestBody } from './_helpers.ts';
 
@@ -372,8 +372,8 @@ export default async function handler(req: any, res: any) {
 
     if (req.method === 'POST' || req.method === 'PUT') {
       const token = extractToken(req);
-      if (!verifyAdminToken(token)) {
-        return res.status(401).json({ error: 'Потрібна авторизація адміністратора для збереження статей' });
+      if (!verifyEditorOrAdminToken(token)) {
+        return res.status(401).json({ error: 'Потрібна авторизація для збереження статей' });
       }
 
       let body = await parseRequestBody(req);
