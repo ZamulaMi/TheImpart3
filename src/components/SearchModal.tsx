@@ -76,7 +76,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({
       document.body.style.overflow = '';
       const timer = setTimeout(() => {
         setRendered(false);
-      }, 350);
+      }, 650);
       return () => clearTimeout(timer);
     }
   }, [isOpen]);
@@ -146,7 +146,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({
     <div
       role="dialog"
       aria-modal="true"
-      className={`fixed inset-0 z-50 flex flex-col bg-white/75 sm:bg-white/80 backdrop-blur-xl overflow-hidden transition-opacity duration-300 ease-out select-none ${
+      className={`fixed inset-0 z-50 flex flex-col bg-white/60 sm:bg-white/65 backdrop-blur-2xl overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] select-none ${
         isAnimateIn ? 'opacity-100' : 'opacity-0 pointer-events-none'
       }`}
     >
@@ -157,7 +157,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({
       <header
         onMouseDown={(e) => e.stopPropagation()}
         onClick={(e) => e.stopPropagation()}
-        className="w-full bg-white/40 backdrop-blur-md py-3.5 sm:py-4 border-b border-neutral-200/50 cursor-default"
+        className="w-full bg-white/40 backdrop-blur-xl py-3.5 sm:py-4 border-b border-neutral-200/40 cursor-default"
       >
         <div className="w-[92%] sm:w-[90%] md:w-[calc(26/34*100%)] mx-auto flex items-center justify-between min-h-[38px]">
           <div className="overflow-hidden py-0.5 -my-0.5">
@@ -195,8 +195,8 @@ export const SearchModal: React.FC<SearchModalProps> = ({
           <div
             onMouseDown={(e) => e.stopPropagation()}
             onClick={(e) => e.stopPropagation()}
-            className={`w-full bg-white/95 sm:bg-white/95 backdrop-blur-sm rounded-2xl p-5 sm:p-7 shadow-[0_8px_30px_rgb(0,0,0,0.06)] border border-neutral-200/90 transition-all duration-350 ease-out select-text cursor-default ${
-              isAnimateIn ? 'translate-y-0 opacity-100' : 'translate-y-3 opacity-0'
+            className={`w-full bg-white/95 sm:bg-white/95 backdrop-blur-md rounded-2xl p-5 sm:p-7 shadow-[0_16px_45px_rgb(0,0,0,0.08)] border border-neutral-200/80 transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] select-text cursor-default ${
+              isAnimateIn ? 'translate-y-0 opacity-100 scale-100' : 'translate-y-6 opacity-0 scale-[0.97]'
             }`}
           >
             {/* Світле поле вводу з контрастним текстом */}
@@ -247,7 +247,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({
             <div
               onMouseDown={(e) => e.stopPropagation()}
               onClick={(e) => e.stopPropagation()}
-              className="w-full mt-6 space-y-3 animate-fade-in select-text"
+              className="w-full mt-6 space-y-3 animate-page-fade-in select-text"
             >
               {/* Панель з кількістю, розумною підказкою та кнопкою "Відкрити всі результати" */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-neutral-200/80 gap-2.5 px-1">

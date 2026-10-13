@@ -194,7 +194,7 @@ function ArticleCard({ article, siteLang, aspectRatio, isHero = false, onSelect 
         onSelect(article.id);
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }}
-      className={`group relative cursor-pointer overflow-hidden rounded-xl bg-neutral-900 shadow-md hover:shadow-xl transition-all duration-500 flex flex-col justify-end ${aspectClass}`}
+      className={`group relative cursor-pointer overflow-hidden rounded-xl bg-neutral-900 shadow-md hover:shadow-xl transition-all duration-500 flex flex-col justify-end animate-card-fade-in ${aspectClass}`}
     >
       {/* Фонове фото */}
       {article.coverImage ? (
@@ -1257,7 +1257,10 @@ export default function App() {
             />
           ) : activeSearchFilter ? (
             /* Сторінка результатів пошуку (з пагінацією по 10 статей, без "показати більше") */
-            <div className="w-[92%] sm:w-[90%] md:w-[calc(26/34*100%)] mx-auto pt-2 sm:pt-3.5 pb-10 sm:pb-14">
+            <div
+              key={`search_${activeSearchFilter.query}_${searchPage}`}
+              className="w-[92%] sm:w-[90%] md:w-[calc(26/34*100%)] mx-auto pt-2 sm:pt-3.5 pb-10 sm:pb-14 animate-article-fade-in"
+            >
               {(() => {
                 const totalSearchPages = Math.max(1, Math.ceil(searchResultsArticles.length / 10));
                 const safeSearchPage = Math.min(Math.max(1, searchPage), totalSearchPages);
@@ -1472,7 +1475,10 @@ export default function App() {
             </div>
           ) : activeCategorySection ? (
             /* Сторінка обраної рубрики (Новини / Статті / Огляди) */
-            <div className="w-[92%] sm:w-[90%] md:w-[calc(26/34*100%)] mx-auto pt-2 sm:pt-3.5 pb-10 sm:pb-14">
+            <div
+              key={`cat_${activeCategorySection}_${categoryPage}`}
+              className="w-[92%] sm:w-[90%] md:w-[calc(26/34*100%)] mx-auto pt-2 sm:pt-3.5 pb-10 sm:pb-14 animate-article-fade-in"
+            >
               {(() => {
                 const categoryArticles = basePublishedArticles.filter((article) =>
                   matchesHeaderSection(article, activeCategorySection)
@@ -1710,7 +1716,7 @@ export default function App() {
                   </p>
                 </div>
               ) : (
-                <div className="space-y-4 sm:space-y-6">
+                <div className="space-y-4 sm:space-y-6 animate-article-fade-in">
                   {(() => {
                     const visibleArticles = basePublishedArticles.slice(0, visibleCount);
 
