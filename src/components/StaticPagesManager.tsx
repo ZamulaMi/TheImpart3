@@ -10,15 +10,10 @@ import {
   RotateCcw,
   Sparkles,
   Info,
-  Heading,
-  Bold,
-  Italic,
-  List,
-  Link as LinkIcon,
-  Quote,
 } from 'lucide-react';
 import { SitePagesData, StaticPageId, DEFAULT_PAGES_DATA } from '../types';
 import { ContentRenderer } from './ContentRenderer';
+import { RichArticleEditor } from './RichArticleEditor';
 
 interface StaticPagesManagerProps {
   pages: SitePagesData;
@@ -72,25 +67,6 @@ export const StaticPagesManager: React.FC<StaticPagesManagerProps> = ({
         [langTab === 'en' ? 'contentEn' : 'content']: val,
       },
     }));
-  };
-
-  const insertFormatting = (prefix: string, suffix: string = '') => {
-    const textarea = document.getElementById('static-page-textarea') as HTMLTextAreaElement | null;
-    if (!textarea) return;
-
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const currentText = (langTab === 'en' ? currentPage.contentEn : currentPage.content) || '';
-    const selected = currentText.substring(start, end);
-    const replacement = `${prefix}${selected || 'текст'}${suffix}`;
-    const newText = currentText.substring(0, start) + replacement + currentText.substring(end);
-
-    handleContentChange(newText);
-
-    setTimeout(() => {
-      textarea.focus();
-      textarea.setSelectionRange(start + prefix.length, start + prefix.length + (selected ? selected.length : 5));
-    }, 50);
   };
 
   const handleSave = async (e?: React.FormEvent) => {
@@ -369,97 +345,36 @@ export const StaticPagesManager: React.FC<StaticPagesManagerProps> = ({
             <>
               {/* Поле назви сторінки */}
               <div>
-                <label className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-2">
-                  Заголовок сторінки ({langTab.toUpperCase()})
+                <label className="block text-xs uppercase tracking-wider text-neutral-500 mb-2 font-medium">
+                  {langTab === 'en' ? 'Page Title (EN) *' : 'Заголовок сторінки (UA) *'}
                 </label>
                 <input
                   type="text"
                   value={titleVal || ''}
                   onChange={(e) => handleTitleChange(e.target.value)}
-                  placeholder={langTab === 'en' ? 'Page Title' : 'Заголовок сторінки'}
-                  className="w-full px-3.5 py-2.5 text-base sm:text-lg font-medium text-black bg-neutral-50 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all"
+                  placeholder={langTab === 'en' ? 'Enter page title...' : 'Введіть заголовок сторінки...'}
+                  className="w-full text-base sm:text-lg font-medium border border-neutral-200 p-3.5 focus:border-black focus:outline-none transition-colors"
                   style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
                 />
               </div>
 
-              {/* Текстовий редактор вмісту */}
+              {/* Текст сторінки — повноцінний редактор, такий як для статей */}
               <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider">
-                    Вміст сторінки ({langTab.toUpperCase()})
-                  </label>
-                  <span className="text-[11px] text-neutral-400">Підтримує Markdown, списки, заголовки, посилання</span>
-                </div>
-
-                {/* Швидка панель форматування */}
-                <div className="flex flex-wrap items-center gap-1 p-1.5 bg-neutral-100 rounded-t-lg border border-neutral-300 border-b-0">
-                  <button
-                    type="button"
-                    onClick={() => insertFormatting('### ')}
-                    className="p-1.5 text-xs text-neutral-700 hover:bg-white rounded transition-colors flex items-center gap-1 cursor-pointer"
-                    title="Підзаголовок H3"
-                  >
-                    <Heading className="w-3.5 h-3.5" />
-                    <span>H3</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => insertFormatting('**', '**')}
-                    className="p-1.5 text-xs text-neutral-700 hover:bg-white rounded transition-colors flex items-center gap-1 cursor-pointer font-bold"
-                    title="Жирний шрифт"
-                  >
-                    <Bold className="w-3.5 h-3.5" />
-                    <span>B</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => insertFormatting('*', '*')}
-                    className="p-1.5 text-xs text-neutral-700 hover:bg-white rounded transition-colors flex items-center gap-1 cursor-pointer italic"
-                    title="Курсив"
-                  >
-                    <Italic className="w-3.5 h-3.5" />
-                    <span>I</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => insertFormatting('\n- ')}
-                    className="p-1.5 text-xs text-neutral-700 hover:bg-white rounded transition-colors flex items-center gap-1 cursor-pointer"
-                    title="Маркований список"
-                  >
-                    <List className="w-3.5 h-3.5" />
-                    <span>Список</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => insertFormatting('[текст посилання](', ')')}
-                    className="p-1.5 text-xs text-neutral-700 hover:bg-white rounded transition-colors flex items-center gap-1 cursor-pointer"
-                    title="Посилання"
-                  >
-                    <LinkIcon className="w-3.5 h-3.5" />
-                    <span>Посилання</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => insertFormatting('\n> ')}
-                    className="p-1.5 text-xs text-neutral-700 hover:bg-white rounded transition-colors flex items-center gap-1 cursor-pointer"
-                    title="Цитата"
-                  >
-                    <Quote className="w-3.5 h-3.5" />
-                    <span>Цитата</span>
-                  </button>
-                </div>
-
-                <textarea
-                  id="static-page-textarea"
+                <label className="block text-xs uppercase tracking-wider text-neutral-500 mb-2 font-medium">
+                  {langTab === 'en' ? 'Page Content (EN) *' : 'Текст сторінки (UA) *'}
+                </label>
+                <RichArticleEditor
+                  key={`static_page_${selectedPageId}_${langTab}`}
                   value={contentVal || ''}
-                  onChange={(e) => handleContentChange(e.target.value)}
-                  rows={16}
+                  onChange={handleContentChange}
                   placeholder={
                     langTab === 'en'
-                      ? 'Write page content here using Markdown formatting...'
-                      : 'Напишіть текст сторінки тут з використанням Markdown розмітки...'
+                      ? 'Write page content in English here using visual formatting, headings, tables, quotes, images...'
+                      : 'Напишіть текст сторінки українською тут за допомогою візуального редактора, заголовків, списків, зображень...'
                   }
-                  className="w-full p-4 text-sm font-mono text-neutral-900 bg-neutral-50 border border-neutral-300 rounded-b-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all resize-y leading-relaxed"
+                  lang={langTab}
+                  articleId={`static_page_${selectedPageId}`}
+                  minHeight="480px"
                 />
               </div>
             </>
