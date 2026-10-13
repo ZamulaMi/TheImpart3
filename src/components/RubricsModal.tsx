@@ -11,6 +11,7 @@ interface RubricsModalProps {
   siteLang: SiteLanguage;
   onSwitchLang: (lang: SiteLanguage) => void;
   onOpenSearch: () => void;
+  onNavigateToPage?: (page: 'about' | 'contacts') => void;
 }
 
 export const RubricsModal: React.FC<RubricsModalProps> = ({
@@ -21,6 +22,7 @@ export const RubricsModal: React.FC<RubricsModalProps> = ({
   siteLang,
   onSwitchLang,
   onOpenSearch,
+  onNavigateToPage,
 }) => {
   const [rendered, setRendered] = useState(isOpen);
   const [isAnimateIn, setIsAnimateIn] = useState(false);
@@ -169,12 +171,37 @@ export const RubricsModal: React.FC<RubricsModalProps> = ({
           })}
         </nav>
 
-        {/* Низ модального вікна: перемикач мови UA / EN */}
+        {/* Низ модального вікна: перемикач мови UA / EN та посилання на сторінки */}
         <div
           className={`pb-4 sm:pb-8 flex flex-col items-center gap-3 transition-all duration-350 delay-75 ease-out ${
             isAnimateIn ? 'translate-y-0 opacity-100' : 'translate-y-3 opacity-0'
           }`}
         >
+          {/* Посилання на постійні сторінки */}
+          <div className="flex items-center gap-3 text-xs font-sans text-neutral-500">
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                onNavigateToPage?.('about');
+              }}
+              className="hover:text-black transition-colors cursor-pointer py-1"
+            >
+              {siteLang === 'en' ? 'About Project' : 'Про проєкт'}
+            </button>
+            <span className="text-neutral-300">•</span>
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                onNavigateToPage?.('contacts');
+              }}
+              className="hover:text-black transition-colors cursor-pointer py-1"
+            >
+              {siteLang === 'en' ? 'Contacts' : 'Контакти'}
+            </button>
+          </div>
+
           <div className="flex items-center gap-1.5 p-1 bg-neutral-100/90 rounded-full border border-neutral-200/50">
             <button
               type="button"

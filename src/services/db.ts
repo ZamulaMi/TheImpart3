@@ -1,6 +1,62 @@
-import { Article, SiteSocialLinks } from '../types';
+import { Article, SiteSocialLinks, SitePagesData } from '../types';
 import { getAuthHeaders } from './auth';
 import { formatErrorMessage } from '../utils/errors';
+
+export async function fetchPagesFromCloud(): Promise<SitePagesData | null> {
+  try {
+    const res = await fetch(`/api/pages?_t=${Date.now()}`, {
+      method: 'GET',
+      headers: { Accept: 'application/json' },
+    });
+    if (res.ok) {
+      const data = await res.json().catch(() => null);
+      if (data && typeof data === 'object' && (data.about || data.contacts)) {
+        return data as SitePagesData;
+      }
+    }
+  } catch (err) {
+    console.warn('API fetchPages notice:', err);
+  }
+  return null;
+}
+
+export async function savePagesToCloud(pages: SitePagesData): Promise<SitePagesData> {
+  try {
+    const res = await fetch(`/api/pages?_t=${Date.now()}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        ...getAuthHeaders(),
+      },
+      body: JSON.stringify(pages),
+    });
+
+    if (res) {
+      const text = await res.text().catch(() => '');
+      let data: any = {};
+      try {
+        data = JSON.parse(text);
+      } catch {
+        data = { error: text };
+      }
+
+      if (res.ok) {
+        return (data && typeof data === 'object' && (data.about || data.contacts)) ? (data as SitePagesData) : pages;
+      }
+
+      if (res.status === 400 || res.status === 401 || res.status === 403) {
+        throw new Error(formatErrorMessage(data.error || data, 'Не вдалося зберегти сторінки на сервері'));
+      }
+    }
+  } catch (err: any) {
+    if (err.message && !err.message.includes('server error')) {
+      throw err;
+    }
+  }
+
+  return pages;
+}
 
 export async function fetchSocialLinksFromCloud(): Promise<SiteSocialLinks | null> {
   try {

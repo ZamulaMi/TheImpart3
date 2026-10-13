@@ -5,11 +5,21 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { Search, X, Menu, ChevronRight, Sparkles } from 'lucide-react';
-import { Article, SiteLanguage, SiteSocialLinks, TaxonomiesData, ArticleDraft, UserRole } from './types';
+import {
+  Article,
+  SiteLanguage,
+  SiteSocialLinks,
+  TaxonomiesData,
+  ArticleDraft,
+  UserRole,
+  SitePagesData,
+  DEFAULT_PAGES_DATA,
+} from './types';
 import { AdminPanel } from './components/AdminPanel';
 import { AdminLogin } from './components/AdminLogin';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ArticleView } from './components/ArticleView';
+import { StaticPageView } from './components/StaticPageView';
 import { SearchModal } from './components/SearchModal';
 import { RubricsModal } from './components/RubricsModal';
 import { formatTimeAgoOrDate } from './utils/date';
@@ -30,6 +40,8 @@ import {
   fetchArticlesFromCloud,
   saveArticleToCloud,
   deleteArticleFromCloud,
+  fetchPagesFromCloud,
+  savePagesToCloud,
 } from './services/db';
 import {
   fetchDraftsFromCloud,
@@ -43,6 +55,7 @@ import { SEED_ARTICLES } from './data/seedArticles';
 const STORAGE_KEY = 'the_impart_articles_v1';
 const LANG_STORAGE_KEY = 'the_impart_lang_v1';
 const SOCIAL_STORAGE_KEY = 'the_impart_social_links_v1';
+const PAGES_STORAGE_KEY = 'the_impart_static_pages_v1';
 
 const DEFAULT_SOCIAL_LINKS: SiteSocialLinks = {
   ua: {
@@ -236,7 +249,7 @@ function ArticleCard({ article, siteLang, aspectRatio, isHero = false, onSelect 
 }
 
 function parseRouteFromUrl(): {
-  route: 'main' | 'admin' | 'login';
+  route: 'main' | 'admin' | 'login' | 'about' | 'contacts';
   section: HeaderSection | null;
   articleId: string | null;
   searchQuery: string | null;
@@ -269,7 +282,15 @@ function parseRouteFromUrl(): {
     return { route: 'admin', section: null, articleId: null, searchQuery: null, page: 1 };
   }
 
-  // 3. Пряме посилання на статтю: /article/:id або зворотна сумісність: ?article=:id або #article-:id
+  // 3. Статичні сторінки: /about, #about, /contacts, #contacts
+  if (path === '/about' || path.startsWith('/about/') || hash === '#about' || params.get('page') === 'about') {
+    return { route: 'about', section: null, articleId: null, searchQuery: null, page: 1 };
+  }
+  if (path === '/contacts' || path.startsWith('/contacts/') || hash === '#contacts' || params.get('page') === 'contacts') {
+    return { route: 'contacts', section: null, articleId: null, searchQuery: null, page: 1 };
+  }
+
+  // 4. Пряме посилання на статтю: /article/:id або зворотна сумісність: ?article=:id або #article-:id
   let articleId: string | null = null;
   const articleMatch = rawPath.match(/^\/article\/(.+)$/i);
   if (articleMatch) {
@@ -284,7 +305,7 @@ function parseRouteFromUrl(): {
     return { route: 'main', section: null, articleId, searchQuery: null, page: 1 };
   }
 
-  // 4. Розділи: /news, /articles, /reviews або зворотна сумісність ?section=...
+  // 5. Розділи: /news, /articles, /reviews або зворотна сумісність ?section=...
   let section: HeaderSection | null = null;
   if (path === '/news' || params.get('section') === 'news') {
     section = 'news';
@@ -294,7 +315,7 @@ function parseRouteFromUrl(): {
     section = 'reviews';
   }
 
-  // 5. Пошук: /search/:query, /search?q=... або ?search=... або ?q=...
+  // 6. Пошук: /search/:query, /search?q=... або ?search=... або ?q=...
   let searchQuery: string | null = null;
   const searchMatch = rawPath.match(/^\/search\/(.+)$/i);
   if (searchMatch) {
@@ -304,7 +325,7 @@ function parseRouteFromUrl(): {
     if (q && q.trim()) searchQuery = q.trim();
   }
 
-  // 6. Пагінація: ?page=...
+  // 7. Пагінація: ?page=...
   const pgParam = parseInt(params.get('page') || '1', 10);
   const page = isNaN(pgParam) || pgParam < 1 ? 1 : pgParam;
 
@@ -312,7 +333,7 @@ function parseRouteFromUrl(): {
 }
 
 export default function App() {
-  const [currentRoute, setCurrentRoute] = useState<'main' | 'admin' | 'login'>(() => parseRouteFromUrl().route);
+  const [currentRoute, setCurrentRoute] = useState<'main' | 'admin' | 'login' | 'about' | 'contacts'>(() => parseRouteFromUrl().route);
 
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState<boolean>(() => {
     return Boolean(getAuthToken());
@@ -395,6 +416,55 @@ export default function App() {
     }
     return DEFAULT_SOCIAL_LINKS;
   });
+
+  const [staticPages, setStaticPages] = useState<SitePagesData>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem(PAGES_STORAGE_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed && typeof parsed === 'object' && (parsed.about || parsed.contacts)) {
+            return {
+              about: { ...DEFAULT_PAGES_DATA.about, ...(parsed.about || {}) },
+              contacts: { ...DEFAULT_PAGES_DATA.contacts, ...(parsed.contacts || {}) },
+            };
+          }
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    return DEFAULT_PAGES_DATA;
+  });
+
+  const fetchPagesFromDb = async () => {
+    try {
+      const data = await fetchPagesFromCloud();
+      if (data && typeof data === 'object' && (data.about || data.contacts)) {
+        setStaticPages({
+          about: { ...DEFAULT_PAGES_DATA.about, ...(data.about || {}) },
+          contacts: { ...DEFAULT_PAGES_DATA.contacts, ...(data.contacts || {}) },
+        });
+        try {
+          localStorage.setItem(PAGES_STORAGE_KEY, JSON.stringify(data));
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    } catch (err) {
+      console.warn('Pages fetch notice:', err);
+    }
+  };
+
+  const handleSaveStaticPages = async (newPages: SitePagesData) => {
+    setStaticPages(newPages);
+    try {
+      localStorage.setItem(PAGES_STORAGE_KEY, JSON.stringify(newPages));
+    } catch (e) {
+      console.error(e);
+    }
+    await savePagesToCloud(newPages);
+  };
 
   const [selectedArticleId, setSelectedArticleId] = useState<string | null>(() => parseRouteFromUrl().articleId);
 
@@ -633,10 +703,11 @@ export default function App() {
     setIsLoading(false);
   };
 
-  // Завантаження статей та налаштувань із бази даних
+  // Завантаження статей, налаштувань та статичних сторінок із бази даних
   useEffect(() => {
     fetchArticlesFromDb();
     fetchSocialLinksFromDb();
+    fetchPagesFromDb();
   }, []);
 
   // Синхронізація з навігацією браузера (URL, popstate, hashchange)
@@ -656,6 +727,14 @@ export default function App() {
           setCurrentRoute('admin');
         }
         setSelectedArticleId(null);
+        return;
+      }
+
+      if (parsed.route === 'about' || parsed.route === 'contacts') {
+        setCurrentRoute(parsed.route);
+        setSelectedArticleId(null);
+        setActiveSearchFilter(null);
+        setActiveCategorySection(null);
         return;
       }
 
@@ -684,7 +763,18 @@ export default function App() {
     };
   }, [isAdminAuthenticated]);
 
-  const navigateTo = (route: 'main' | 'admin' | 'login', articleId?: string) => {
+  const navigateToPage = (page: 'about' | 'contacts') => {
+    setSelectedArticleId(null);
+    setActiveCategorySection(null);
+    setActiveSearchFilter(null);
+    setIsMobileMenuOpen(false);
+    setIsSearchOpen(false);
+    window.history.pushState(null, '', `/${page}`);
+    setCurrentRoute(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const navigateTo = (route: 'main' | 'admin' | 'login' | 'about' | 'contacts', articleId?: string) => {
     if (route === 'login') {
       if (isAdminAuthenticated) {
         window.history.pushState(null, '', '/admin');
@@ -703,6 +793,8 @@ export default function App() {
         setCurrentRoute('admin');
       }
       setSelectedArticleId(null);
+    } else if (route === 'about' || route === 'contacts') {
+      navigateToPage(route);
     } else {
       setCurrentRoute('main');
       if (articleId) {
@@ -718,6 +810,7 @@ export default function App() {
   };
 
   const handleSelectSection = (sec: HeaderSection | null) => {
+    setCurrentRoute('main');
     setActiveCategorySection(sec);
     setCategoryPage(1);
     setSelectedArticleId(null);
@@ -994,6 +1087,9 @@ export default function App() {
           socialLinks={socialLinks}
           onSaveSocialLinks={handleSaveSocialLinks}
           onRefreshSocialLinks={fetchSocialLinksFromDb}
+          pages={staticPages}
+          onSavePages={handleSaveStaticPages}
+          onViewPageOnSite={(slug) => navigateToPage(slug)}
           taxonomies={taxonomies}
           onSaveTaxonomies={handleSaveTaxonomies}
           userRole={userRole}
@@ -1137,9 +1233,10 @@ export default function App() {
         siteLang={siteLang}
         onSwitchLang={handleSetLang}
         onOpenSearch={() => setIsSearchOpen(true)}
+        onNavigateToPage={(slug) => navigateToPage(slug)}
       />
 
-      {/* Центральна частина (Body) зі статтями */}
+      {/* Центральна частина (Body) зі статтями та статичними сторінками */}
       <main className="flex-1 flex flex-col justify-between">
         <div className="w-full">
           {selectedArticle ? (
@@ -1148,6 +1245,15 @@ export default function App() {
               lang={siteLang}
               onBack={() => handleSelectArticle(null)}
               onSwitchLang={handleSetLang}
+            />
+          ) : currentRoute === 'about' || currentRoute === 'contacts' ? (
+            <StaticPageView
+              page={staticPages[currentRoute]}
+              lang={siteLang}
+              socialLinks={socialLinks}
+              onBack={() => navigateTo('main')}
+              onSwitchLang={handleSetLang}
+              onNavigateToPage={(slug) => navigateToPage(slug)}
             />
           ) : activeSearchFilter ? (
             /* Сторінка результатів пошуку (з пагінацією по 10 статей, без "показати більше") */
@@ -1799,9 +1905,28 @@ export default function App() {
             </span>
             <p className="text-xs text-neutral-400 mt-1">
               {siteLang === 'en'
-                ? 'Journal of aesthetics, philosophy, and mindful reflection.'
-                : 'Журнал естетики, філософії та усвідомленого споглядання.'}
+                ? 'A knowledge space for tech and culture.'
+                : 'Простір знань про технології та культуру.'}
             </p>
+
+            {/* Посилання на сторінки "Про проєкт" та "Контакти" */}
+            <div className="mt-2.5 flex items-center gap-3 text-xs font-sans">
+              <button
+                type="button"
+                onClick={() => navigateToPage('about')}
+                className="text-neutral-500 hover:text-black transition-colors cursor-pointer underline-offset-4 hover:underline"
+              >
+                {siteLang === 'en' ? 'About Project' : 'Про проєкт'}
+              </button>
+              <span className="text-neutral-300">•</span>
+              <button
+                type="button"
+                onClick={() => navigateToPage('contacts')}
+                className="text-neutral-500 hover:text-black transition-colors cursor-pointer underline-offset-4 hover:underline"
+              >
+                {siteLang === 'en' ? 'Contacts' : 'Контакти'}
+              </button>
+            </div>
 
             <div className="mt-3.5 flex items-center gap-4 text-neutral-400">
               {/* Telegram */}

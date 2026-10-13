@@ -104,3 +104,94 @@ export const DEFAULT_SOCIAL_LINKS: SiteSocialLinks = {
     threads: 'https://threads.net/@impart_en',
   },
 };
+
+export type StaticPageId = 'about' | 'contacts';
+
+export interface StaticPageData {
+  id: StaticPageId;
+  slug: string;
+  title: string;
+  titleEn: string;
+  content: string;
+  contentEn: string;
+  updatedAt?: string;
+}
+
+export interface SitePagesData {
+  about: StaticPageData;
+  contacts: StaticPageData;
+}
+
+export const DEFAULT_PAGES_DATA: SitePagesData = {
+  about: {
+    id: 'about',
+    slug: 'about',
+    title: 'Про проєкт',
+    titleEn: 'About the Project',
+    content: `**The Impart** — це незалежний простір знань про технології та культуру. Ми досліджуємо, як цифрові трансформації змінюють мислення людини, естетику навколишнього світу та структуру сучасного суспільства.
+
+### Наша місія
+Замість інформаційного шуму та поверхневих сенсацій ми обираємо глибину, уважність і естетичну точність. Наше завдання — створювати осмислений простір для тих, хто прагне розуміти глибинні процеси технологічного та культурного розвитку.
+
+### Ключові напрями
+- **Технології та майбутнє:** Штучний інтелект, цифрова етика, еволюція взаємодії людини та машини.
+- **Культура та естетика:** Сучасне мистецтво, архітектура, візуальні медіа та нові форми вираження.
+- **Філософія та споглядання:** Усвідомленість у цифровому віці, повільне читання та критичне мислення.
+
+Ми публікуємо аналітичні статті, глибокі огляди, інтерв'ю та есе провідних авторів.`,
+    contentEn: `**The Impart** is an independent knowledge space for technology and culture. We explore how digital transformations shape human consciousness, aesthetic environments, and contemporary society.
+
+### Our Mission
+Rather than chasing algorithmic noise and surface-level headlines, we choose depth, mindfulness, and aesthetic clarity. Our purpose is to build a thoughtful space for those who seek to understand the foundational currents of tech and culture.
+
+### Core Focus Areas
+- **Technology & Futures:** Artificial intelligence, digital ethics, and the evolution of human-machine interaction.
+- **Culture & Aesthetics:** Contemporary art, architecture, visual media, and emerging creative forms.
+- **Philosophy & Reflection:** Mindfulness in the digital era, slow reading, and critical contemplation.
+
+We curate insightful essays, in-depth reviews, and commentary from forward-thinking thinkers and practitioners.`,
+    updatedAt: new Date().toISOString(),
+  },
+  contacts: {
+    id: 'contacts',
+    slug: 'contacts',
+    title: 'Контакти',
+    titleEn: 'Contacts',
+    content: `### Редакція та комунікація
+Ми завжди раді співпраці з авторами, дослідниками, дизайнерами та культурними діячами. Якщо ви маєте ідею для матеріалу, коментар або відгук — напишіть нам.
+
+- **Загальні запитання:** contact@theimpart.com
+- **Редакція та пропозиції статей:** editorial@theimpart.com
+- **Співпраця та партнерства:** partners@theimpart.com
+- **Преса та медіа-запити:** press@theimpart.com
+
+### Офіційні спільноти
+Слідкуйте за нашими публікаціями, анонсами та ексклюзивними матеріалами в офіційних каналах проєкту:
+- **Telegram:** @impart
+- **Instagram:** @impart
+- **X (Twitter):** @impart_ua
+- **Threads:** @impart_ua
+
+### Формат роботи
+Редакція працює у розподіленому форматі (Київ / віддалено). Ми відповідаємо на всі листи протягом 1-2 робочих днів.`,
+    contentEn: `### Editorial & Inquiries
+We welcome collaborations with writers, researchers, designers, and cultural thinkers. If you have an editorial pitch, inquiry, or feedback — feel free to reach out.
+
+- **General inquiries:** contact@theimpart.com
+- **Editorial pitches:** editorial@theimpart.com
+- **Partnerships:** partners@theimpart.com
+- **Press & media:** press@theimpart.com
+
+### Official Channels
+Follow our publications, announcements, and featured essays across our platforms:
+- **Telegram:** @impart_en
+- **Instagram:** @impart_en
+- **X (Twitter):** @impart_en
+- **Threads:** @impart_en
+
+### Operating Format
+Our team works remotely with roots in Kyiv, Ukraine. We aim to respond to all editorial inquiries within 1–2 business days.`,
+    updatedAt: new Date().toISOString(),
+  },
+};
+

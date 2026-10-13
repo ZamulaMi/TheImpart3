@@ -29,8 +29,9 @@ import {
   XCircle,
   AlertCircle,
   User,
+  BookOpen,
 } from 'lucide-react';
-import { Article, SiteSocialLinks, TaxonomiesData, ArticleDraft, UserRole } from '../types';
+import { Article, SiteSocialLinks, TaxonomiesData, ArticleDraft, UserRole, SitePagesData, DEFAULT_PAGES_DATA } from '../types';
 import { formatTimeAgoOrDate } from '../utils/date';
 import { ContentRenderer } from './ContentRenderer';
 import { SocialLinksManager } from './SocialLinksManager';
@@ -39,6 +40,7 @@ import { TaxonomyManager } from './TaxonomyManager';
 import { AdminSecurityManager } from './AdminSecurityManager';
 import { EditorAccountsManager } from './EditorAccountsManager';
 import { DraftsManager } from './DraftsManager';
+import { StaticPagesManager } from './StaticPagesManager';
 import { getAuthHeaders } from '../services/auth';
 import { formatErrorMessage } from '../utils/errors';
 
@@ -52,6 +54,9 @@ interface AdminPanelProps {
   socialLinks?: SiteSocialLinks;
   onSaveSocialLinks: (links: SiteSocialLinks) => Promise<void> | void;
   onRefreshSocialLinks?: () => Promise<void>;
+  pages?: SitePagesData;
+  onSavePages?: (pages: SitePagesData) => Promise<void> | void;
+  onViewPageOnSite?: (pageSlug: 'about' | 'contacts') => void;
   taxonomies?: TaxonomiesData;
   onSaveTaxonomies: (data: TaxonomiesData) => void;
   userRole?: UserRole;
@@ -75,6 +80,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   socialLinks = { ua: {}, en: {} },
   onSaveSocialLinks,
   onRefreshSocialLinks,
+  pages,
+  onSavePages,
+  onViewPageOnSite,
   taxonomies = { categories: [], topics: [] },
   onSaveTaxonomies,
   userRole = 'admin',
@@ -90,7 +98,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const isEditor = userRole === 'editor';
   const articles = Array.isArray(rawArticles) ? rawArticles.filter(Boolean) : [];
   // Розділи панелі
-  const [activeSection, setActiveSection] = useState<'articles' | 'drafts' | 'taxonomies' | 'editors' | 'social_links' | 'security'>('articles');
+  const [activeSection, setActiveSection] = useState<'articles' | 'drafts' | 'taxonomies' | 'pages' | 'editors' | 'social_links' | 'security'>('articles');
   const [editorArticlesTab, setEditorArticlesTab] = useState<'articles' | 'my_drafts'>('articles');
   const [editingDraftId, setEditingDraftId] = useState<string | null>(null);
 
@@ -890,6 +898,27 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               </button>
             )}
 
+            {/* Опція 6: Сторінки сайту (тільки адміністратор) */}
+            {!isEditor && (
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveSection('pages');
+                  setEditingArticle(null);
+                  setEditingDraftId(null);
+                  setIsCreatingNew(false);
+                }}
+                className={`flex-1 md:flex-initial flex items-center gap-3 px-3.5 py-2.5 text-xs sm:text-sm font-medium rounded-md transition-all cursor-pointer text-left ${
+                  activeSection === 'pages'
+                    ? 'bg-black text-white shadow-xs'
+                    : 'text-neutral-600 hover:text-black hover:bg-neutral-100'
+                }`}
+              >
+                <BookOpen className="w-4 h-4 shrink-0" />
+                <span>Сторінки сайту</span>
+              </button>
+            )}
+
             {/* Опція 6: Безпека та пароль (тільки адміністратор) */}
             {!isEditor && (
               <button
@@ -942,6 +971,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               onSaveSocialLinks={onSaveSocialLinks}
               onRefreshSocialLinks={onRefreshSocialLinks}
               showNotification={showNotification}
+            />
+          ) : activeSection === 'pages' && !isEditor ? (
+            <StaticPagesManager
+              pages={pages || DEFAULT_PAGES_DATA}
+              onSavePages={onSavePages || (async () => {})}
+              onViewOnSite={onViewPageOnSite}
             />
           ) : activeSection === 'security' && !isEditor ? (
             <AdminSecurityManager

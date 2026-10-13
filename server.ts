@@ -8,6 +8,7 @@ import articlesHandler, { getArticles } from './api/articles';
 import settingsHandler, { getSocialLinks } from './api/settings';
 import authHandler, { extractToken, verifyAdminToken } from './api/auth';
 import draftsHandler, { getDrafts } from './api/drafts';
+import pagesHandler, { getPages } from './api/pages';
 import { verifyEditorOrAdminToken } from './api/_auth_utils';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -162,6 +163,23 @@ app.all(['/api/settings', '/api/settings/*'], async (req, res) => {
     if (!res.headersSent) {
       try {
         const data = await getSocialLinks();
+        return res.status(200).json(data);
+      } catch {
+        return res.status(200).json({});
+      }
+    }
+  }
+});
+
+// Підключення API ендпоінту статичних сторінок ("Про проєкт", "Контакти")
+app.all(['/api/pages', '/api/pages/*'], async (req, res) => {
+  try {
+    await pagesHandler(req, res);
+  } catch (err: any) {
+    console.warn('Express /api/pages fallback active:', err);
+    if (!res.headersSent) {
+      try {
+        const data = await getPages();
         return res.status(200).json(data);
       } catch {
         return res.status(200).json({});
