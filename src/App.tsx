@@ -4,7 +4,7 @@
  */
 
 import { useState, useEffect, useMemo } from 'react';
-import { Search, X, Menu, ChevronRight } from 'lucide-react';
+import { Search, X, Menu, ChevronRight, Sparkles } from 'lucide-react';
 import { Article, SiteLanguage, SiteSocialLinks, TaxonomiesData, ArticleDraft, UserRole } from './types';
 import { AdminPanel } from './components/AdminPanel';
 import { AdminLogin } from './components/AdminLogin';
@@ -14,6 +14,7 @@ import { SearchModal } from './components/SearchModal';
 import { RubricsModal } from './components/RubricsModal';
 import { formatTimeAgoOrDate } from './utils/date';
 import { getStoredTaxonomies, saveStoredTaxonomies } from './utils/taxonomies';
+import { searchArticlesWithFuzzy } from './utils/search';
 import {
   getAuthToken,
   getAuthHeaders,
@@ -929,41 +930,22 @@ export default function App() {
     return a.published === true || String(a.published) === 'true' || (a.published as any) === 1;
   });
 
-  // Статті для результатів пошуку (знайдені статті за активним запитом)
+  // Статті для результатів пошуку (розумний пошук з виправленням одруківок)
   // Важливо: хуки повинні викликатися до будь-яких early return операторів
-  const searchResultsArticles = useMemo(() => {
+  const searchResultsData = useMemo(() => {
     if (!activeSearchFilter) return [];
-    const q = activeSearchFilter.query.trim().toLowerCase();
-    return basePublishedArticles.filter((article) => {
-      if (activeSearchFilter.articleIds.length > 0 && activeSearchFilter.articleIds.includes(article.id)) {
-        return true;
-      }
-      const title = (siteLang === 'en' ? article.titleEn : article.title) || '';
-      const excerpt = (siteLang === 'en' ? article.excerptEn : article.excerpt) || '';
-      const content = (siteLang === 'en' ? article.contentEn : article.content) || '';
-      const cats = (
-        siteLang === 'en'
-          ? (article.categoriesEn && article.categoriesEn.length > 0
-              ? article.categoriesEn
-              : (article.categoryEn ? [article.categoryEn] : (article.categories || [article.category])))
-          : (article.categories && article.categories.length > 0
-              ? article.categories
-              : (article.category ? [article.category] : []))
-      ).filter(Boolean).join(' ');
-      const tops = (
-        siteLang === 'en'
-          ? (article.topicsEn && article.topicsEn.length > 0 ? article.topicsEn : article.topics || [])
-          : (article.topics || [])
-      ).join(' ');
-      return (
-        title.toLowerCase().includes(q) ||
-        excerpt.toLowerCase().includes(q) ||
-        content.toLowerCase().includes(q) ||
-        cats.toLowerCase().includes(q) ||
-        tops.toLowerCase().includes(q)
-      );
-    });
-  }, [activeSearchFilter, basePublishedArticles, siteLang]);
+    const q = activeSearchFilter.query.trim();
+    if (!q) return [];
+    return searchArticlesWithFuzzy(articles, q, siteLang);
+  }, [activeSearchFilter, articles, siteLang]);
+
+  const searchResultsArticles = useMemo(() => {
+    return searchResultsData.map((r) => r.article);
+  }, [searchResultsData]);
+
+  const hasSearchTypoMatches = useMemo(() => {
+    return searchResultsData.some((r) => r.hasFuzzyMatch);
+  }, [searchResultsData]);
 
   const selectedArticle = articles.find((a) => a.id === selectedArticleId);
 
@@ -1206,6 +1188,15 @@ export default function App() {
                                 }`
                               : `Знайдено матеріалів: ${searchResultsArticles.length}`}
                           </span>
+                          {hasSearchTypoMatches && (
+                            <>
+                              <span className="text-neutral-300">•</span>
+                              <span className="inline-flex items-center gap-1 text-[11px] font-medium text-neutral-600 bg-neutral-100/90 border border-neutral-200/70 px-2 py-0.5 rounded-full font-sans">
+                                <Sparkles className="w-3 h-3 text-neutral-500" />
+                                <span>{siteLang === 'en' ? 'Typo-tolerant' : 'З урахуванням одруківок'}</span>
+                              </span>
+                            </>
+                          )}
                           {totalSearchPages > 1 && (
                             <>
                               <span className="text-neutral-300">•</span>
@@ -1231,10 +1222,15 @@ export default function App() {
 
                     {searchResultsArticles.length === 0 ? (
                       <div className="py-20 text-center max-w-md mx-auto">
-                        <p className="text-neutral-400 font-serif italic text-lg sm:text-xl mb-3">
+                        <p className="text-neutral-400 font-serif italic text-lg sm:text-xl mb-2">
                           {siteLang === 'en'
                             ? 'No articles match your search query.'
                             : 'За вашим запитом не знайдено опублікованих статей.'}
+                        </p>
+                        <p className="text-xs text-neutral-500 mb-6 font-sans">
+                          {siteLang === 'en'
+                            ? 'Try searching with simpler or different keywords.'
+                            : 'Спробуйте використати інші ключові слова або спростити запит.'}
                         </p>
                         <button
                           type="button"

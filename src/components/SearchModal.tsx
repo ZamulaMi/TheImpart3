@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Search, X, ArrowRight } from 'lucide-react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { Search, X, ArrowRight, Sparkles } from 'lucide-react';
 import { Article, SiteLanguage } from '../types';
 import { formatTimeAgoOrDate } from '../utils/date';
+import { searchArticlesWithFuzzy, getHighlightedChunks } from '../utils/search';
 
 interface SearchModalProps {
   isOpen: boolean;
@@ -11,6 +12,31 @@ interface SearchModalProps {
   onSelectArticle: (id: string) => void;
   onShowAllSearchResults: (query: string, results: Article[]) => void;
 }
+
+const HighlightedText: React.FC<{ text: string; query: string; className?: string }> = ({
+  text,
+  query,
+  className,
+}) => {
+  const chunks = useMemo(() => getHighlightedChunks(text, query), [text, query]);
+
+  return (
+    <span className={className}>
+      {chunks.map((chunk, i) =>
+        chunk.isMatch ? (
+          <mark
+            key={i}
+            className="bg-neutral-200/90 text-neutral-950 font-semibold px-0.5 rounded-xs not-italic"
+          >
+            {chunk.text}
+          </mark>
+        ) : (
+          <React.Fragment key={i}>{chunk.text}</React.Fragment>
+        )
+      )}
+    </span>
+  );
+};
 
 export const SearchModal: React.FC<SearchModalProps> = ({
   isOpen,
@@ -65,49 +91,22 @@ export const SearchModal: React.FC<SearchModalProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
 
-  if (!rendered) return null;
-
   const isEn = lang === 'en';
-  const cleanQuery = query.trim().toLowerCase();
+  const cleanQuery = query.trim();
 
-  // Фільтруємо статті за активною мовою та релевантністю
-  const matchingArticles = articles.filter((article) => {
-    if (isEn) {
-      const isPubEn = article.publishedEn === true || String(article.publishedEn) === 'true';
-      if (!isPubEn || !article.titleEn?.trim()) return false;
-    } else {
-      const isPub = article.published === true || String(article.published) === 'true' || (article.published as any) === 1;
-      if (!isPub) return false;
-    }
+  // Розумний пошук з урахуванням одруківок, відмінків та транслітерації
+  const searchResults = useMemo(() => {
+    if (!cleanQuery) return [];
+    return searchArticlesWithFuzzy(articles, cleanQuery, lang);
+  }, [articles, cleanQuery, lang]);
 
-    if (!cleanQuery) return false;
+  const matchingArticles = useMemo(() => {
+    return searchResults.map((r) => r.article);
+  }, [searchResults]);
 
-    const title = (isEn ? article.titleEn : article.title) || '';
-    const excerpt = (isEn ? article.excerptEn : article.excerpt) || '';
-    const content = (isEn ? article.contentEn : article.content) || '';
-    const categories = (
-      isEn
-        ? (article.categoriesEn && article.categoriesEn.length > 0
-            ? article.categoriesEn
-            : (article.categoryEn ? [article.categoryEn] : (article.categories || [article.category])))
-        : (article.categories && article.categories.length > 0
-            ? article.categories
-            : (article.category ? [article.category] : []))
-    ).filter(Boolean).join(' ');
-    const topics = (
-      isEn
-        ? (article.topicsEn && article.topicsEn.length > 0 ? article.topicsEn : article.topics || [])
-        : (article.topics || [])
-    ).join(' ');
-
-    return (
-      title.toLowerCase().includes(cleanQuery) ||
-      excerpt.toLowerCase().includes(cleanQuery) ||
-      content.toLowerCase().includes(cleanQuery) ||
-      categories.toLowerCase().includes(cleanQuery) ||
-      topics.toLowerCase().includes(cleanQuery)
-    );
-  });
+  const hasTypoMatches = useMemo(() => {
+    return searchResults.some((r) => r.hasFuzzyMatch);
+  }, [searchResults]);
 
   const handleOpenAll = () => {
     if (cleanQuery) {
@@ -120,6 +119,8 @@ export const SearchModal: React.FC<SearchModalProps> = ({
     onSelectArticle(id);
     onClose();
   };
+
+  if (!rendered) return null;
 
   return (
     <div
@@ -210,13 +211,21 @@ export const SearchModal: React.FC<SearchModalProps> = ({
         {/* Результати пошуку (також на світлому, виразному фоні) */}
         {cleanQuery && (
           <div className="w-full mt-6 space-y-3 animate-fade-in">
-            {/* Панель з кількістю та кнопкою "Відкрити всі результати" */}
+            {/* Панель з кількістю, розумною підказкою та кнопкою "Відкрити всі результати" */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-neutral-200/80 gap-2.5 px-1">
-              <span className="text-xs uppercase tracking-wider text-neutral-700 font-semibold font-sans">
-                {isEn
-                  ? `Found ${matchingArticles.length} ${matchingArticles.length === 1 ? 'article' : 'articles'}`
-                  : `Знайдено матеріалів: ${matchingArticles.length}`}
-              </span>
+              <div className="flex items-center flex-wrap gap-2">
+                <span className="text-xs uppercase tracking-wider text-neutral-800 font-semibold font-sans">
+                  {isEn
+                    ? `Found ${matchingArticles.length} ${matchingArticles.length === 1 ? 'article' : 'articles'}`
+                    : `Знайдено матеріалів: ${matchingArticles.length}`}
+                </span>
+                {hasTypoMatches && (
+                  <span className="inline-flex items-center gap-1 text-[11px] font-medium text-neutral-600 bg-neutral-100/90 border border-neutral-200/70 px-2 py-0.5 rounded-full font-sans">
+                    <Sparkles className="w-3 h-3 text-neutral-500" />
+                    <span>{isEn ? 'Typo-tolerant' : 'З урахуванням одруківок'}</span>
+                  </span>
+                )}
+              </div>
 
               {matchingArticles.length > 0 && (
                 <button
@@ -257,11 +266,11 @@ export const SearchModal: React.FC<SearchModalProps> = ({
                           className="text-base sm:text-lg font-serif font-medium text-neutral-900 group-hover:text-neutral-700 transition-colors line-clamp-1"
                           style={{ fontFamily: "'Playfair Display', serif" }}
                         >
-                          {title}
+                          <HighlightedText text={title} query={cleanQuery} />
                         </h4>
                         {excerpt && (
                           <p className="text-xs text-neutral-600 line-clamp-2 mt-1 font-sans leading-relaxed">
-                            {excerpt}
+                            <HighlightedText text={excerpt} query={cleanQuery} />
                           </p>
                         )}
                       </div>
@@ -285,7 +294,9 @@ export const SearchModal: React.FC<SearchModalProps> = ({
                   {isEn ? 'No articles match your query.' : 'За вашим запитом нічого не знайдено.'}
                 </p>
                 <p className="text-xs text-neutral-500 mt-1.5 font-sans">
-                  {isEn ? 'Try another keyword or check spelling.' : 'Спробуйте використати інші ключові слова.'}
+                  {isEn
+                    ? 'Try another keyword or shorten your search.'
+                    : 'Спробуйте спростити запит або використати інші ключові слова.'}
                 </p>
               </div>
             )}
