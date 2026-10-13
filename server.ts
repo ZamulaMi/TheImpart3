@@ -44,6 +44,17 @@ app.use((req, res, next) => {
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
+// Обслуговування іконки сайту (favicon)
+app.get(['/favicon.svg', '/favicon.ico'], (_req, res) => {
+  const filePath = path.join(__dirname, 'public', 'favicon.svg');
+  if (fs.existsSync(filePath)) {
+    res.setHeader('Content-Type', 'image/svg+xml');
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    return res.sendFile(filePath);
+  }
+  res.status(404).end();
+});
+
 // Підключення API ендпоінту статей (з та без слешу, підшляхи)
 app.all(['/api/articles', '/api/articles/*'], async (req, res) => {
   try {
