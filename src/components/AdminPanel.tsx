@@ -1720,7 +1720,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   <span>Панель редактора — Режим чернеток</span>
                 </div>
                 <p className="leading-relaxed text-neutral-700">
-                  Ви можете створювати нові публікації та редагувати існуючі. Всі ваші збережені зміни потрапляють на модерацію до головного адміністратора як чернетки, без шкоди для опублікованих статей на сайті. Видалення матеріалів дозволено лише адміністратору.
+                  Вам доступне оперативне перемикання видимості статей (публікація/приховування UA та EN безпосередньо кнопками в списку), створення нових матеріалів та редагування існуючих через систему чернеток на модерацію. Видалення статей доступне лише адміністратору.
                 </p>
               </div>
             )}
@@ -2090,57 +2090,88 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                       </div>
 
                       {/* Панель дій над статтею */}
-                      <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-center">
-                        {/* Кнопка швидкого приховування/публікації для UA */}
+                      <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 self-end sm:self-center flex-wrap justify-end">
+                        {/* Перемикач видимості для UA (доступний для адміністратора та редактора) */}
                         <button
-                          onClick={() => handleToggleUaVisibility(art)}
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleToggleUaVisibility(art);
+                          }}
                           disabled={isTogglingUa}
-                          className={`p-2 rounded transition-colors cursor-pointer flex items-center gap-1 text-xs ${
+                          className={`px-2.5 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 text-xs font-medium border shadow-2xs ${
                             isPubUa
-                              ? 'text-neutral-600 hover:text-amber-700 hover:bg-amber-50'
-                              : 'text-neutral-500 hover:text-emerald-700 hover:bg-emerald-50'
+                              ? 'bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100 hover:border-emerald-400'
+                              : 'bg-neutral-100 text-neutral-600 border-neutral-300 hover:bg-neutral-200 hover:text-black hover:border-neutral-400'
                           } disabled:opacity-50`}
                           title={
                             isPubUa
-                              ? 'Сховати українську версію з сайту'
-                              : 'Опублікувати українську версію на сайті'
+                              ? 'Українська версія опублікована на сайті. Натисніть, щоб приховати.'
+                              : 'Українська версія прихована з сайту. Натисніть, щоб опублікувати.'
                           }
+                          aria-label={`Перемикач видимості UA для ${art.title}`}
                         >
                           {isTogglingUa ? (
-                            <div className="w-3.5 h-3.5 border-2 border-neutral-400 border-t-transparent rounded-full animate-spin" />
+                            <div className="w-3.5 h-3.5 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin" />
                           ) : (
                             <>
-                              <span className="text-[11px] font-semibold text-neutral-700">UA</span>
-                              <span className="hidden lg:inline">{isPubUa ? 'Сховати' : 'Показати'}</span>
+                              {isPubUa ? (
+                                <Eye className="w-3.5 h-3.5 text-emerald-700" />
+                              ) : (
+                                <EyeOff className="w-3.5 h-3.5 text-neutral-500" />
+                              )}
+                              <span className="font-bold">UA</span>
+                              <span className="hidden sm:inline text-[11px] font-normal">
+                                {isPubUa ? 'Видно' : 'Сховано'}
+                              </span>
                             </>
                           )}
                         </button>
 
-                        {/* Кнопка швидкого приховування/публікації для EN */}
-                        {hasEn && (
+                        {/* Перемикач видимості для EN (доступний для адміністратора та редактора) */}
+                        {hasEn ? (
                           <button
-                            onClick={() => handleToggleEnVisibility(art)}
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleToggleEnVisibility(art);
+                            }}
                             disabled={isTogglingEn}
-                            className={`p-2 rounded transition-colors cursor-pointer flex items-center gap-1 text-xs ${
+                            className={`px-2.5 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 text-xs font-medium border shadow-2xs ${
                               isPubEn
-                                ? 'text-neutral-600 hover:text-amber-700 hover:bg-amber-50'
-                                : 'text-neutral-500 hover:text-blue-700 hover:bg-blue-50'
+                                ? 'bg-blue-50 text-blue-800 border-blue-300 hover:bg-blue-100 hover:border-blue-400'
+                                : 'bg-neutral-100 text-neutral-600 border-neutral-300 hover:bg-neutral-200 hover:text-black hover:border-neutral-400'
                             } disabled:opacity-50`}
                             title={
                               isPubEn
-                                ? 'Сховати англійську версію з сайту'
-                                : 'Опублікувати англійську версію на сайті'
+                                ? 'Англійська версія опублікована на сайті. Натисніть, щоб приховати.'
+                                : 'Англійська версія прихована з сайту. Натисніть, щоб опублікувати.'
                             }
+                            aria-label={`Перемикач видимості EN для ${art.titleEn || art.title}`}
                           >
                             {isTogglingEn ? (
-                              <div className="w-3.5 h-3.5 border-2 border-neutral-400 border-t-transparent rounded-full animate-spin" />
+                              <div className="w-3.5 h-3.5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
                             ) : (
                               <>
-                                <span className="text-[11px] font-semibold text-neutral-700">EN</span>
-                                <span className="hidden lg:inline">{isPubEn ? 'Hide' : 'Publish'}</span>
+                                {isPubEn ? (
+                                  <Eye className="w-3.5 h-3.5 text-blue-700" />
+                                ) : (
+                                  <EyeOff className="w-3.5 h-3.5 text-neutral-500" />
+                                )}
+                                <span className="font-bold">EN</span>
+                                <span className="hidden sm:inline text-[11px] font-normal">
+                                  {isPubEn ? 'Видно' : 'Сховано'}
+                                </span>
                               </>
                             )}
                           </button>
+                        ) : (
+                          <span
+                            className="hidden sm:inline-flex items-center px-2 py-1.5 text-[11px] text-neutral-400 bg-neutral-50 border border-neutral-200/60 rounded-lg cursor-not-allowed select-none"
+                            title="Англійська версія ще не створена"
+                          >
+                            EN —
+                          </span>
                         )}
 
                         {/* Скопіювати пряме посилання на статтю */}
